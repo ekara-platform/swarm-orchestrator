@@ -1,5 +1,4 @@
 orchestrator:
-  component: swarm
   docker:
     params:
       log-driver: json-file
