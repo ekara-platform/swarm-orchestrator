@@ -1,5 +1,5 @@
 ---
-- hosts: managers
+- hosts: ek_role_manager
   gather_facts: true
   tasks:
   - name: Inspect swarm
@@ -19,11 +19,11 @@
   tasks:
   - set_fact:
       swarm_info: "{{hostvars[item].swarm_info}}"
-    loop: "{{groups['managers']}}"
+    loop: "{{groups['ek_role_manager']}}"
     when:
     - hostvars[item].swarm_info is defined
 
-- hosts: managers
+- hosts: ek_role_manager
   gather_facts: true
   run_once: true
   tasks:
@@ -38,18 +38,19 @@
           worker_token: "{{tokens.swarm_facts.JoinTokens.Worker}}"
           manager_token: "{{tokens.swarm_facts.JoinTokens.Manager}}"
           manager_master: "{{ansible_facts.default_ipv4.address}}"
-    when:
-    - hostvars['localhost'].swarm_info is not defined
+      when:
+      - hostvars['localhost'].swarm_info is not defined
+
 - hosts: localhost
   gather_facts: false
   tasks:
   - set_fact:
       swarm_info: "{{hostvars[item].swarm_info}}"
-    loop: "{{groups['managers']}}"
+    loop: "{{groups['ek_role_manager']}}"
     when:
     - hostvars[item].swarm_info is defined
 
-- hosts: managers
+- hosts: ek_role_manager
   gather_facts: true
   tasks:
   - name: Add Swarm managers
@@ -59,7 +60,7 @@
       join_token: "{{hostvars['localhost'].swarm_info.manager_token}}"
       remote_addrs: ["{{hostvars['localhost'].swarm_info.manager_master}}:2377"]
 
-- hosts: workers
+- hosts: ek_role_worker
   gather_facts: true
   tasks:
   - name: Add Swarm workers

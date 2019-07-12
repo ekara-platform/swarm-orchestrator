@@ -1,15 +1,19 @@
 ---
 - hosts: localhost
   gather_facts: false
-  tasks:
+  pre_tasks:
   - name: Load configuration
     include_role:
       name: ekara.configuration
-  - set_fact:
-      nodeset: "{{ekara_configuration_params.environment.nodeset}}"
-      ekara_proxy: "{{ekara_configuration_params.proxy | default({})}}"
 
-- hosts: nodes:&{{hostvars['localhost'].nodeset}}
+- hosts: all
+  gather_facts: true
+  tasks:
+  - name: Get nodes IP
+    set_fact:
+      ekara_nodes_ips: "{{ groups['ek_role_manager'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
+
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
   gather_facts: false
   pre_tasks:
   - name: Load configuration
@@ -20,17 +24,19 @@
     include_role:
       name: ekara.ansible_install
     vars:
-      ekara_install_proxy: "{{hostvars['localhost'].ekara_proxy}}"
-  - block:
+      ekara_install_proxy: "{{ hostvars['localhost'].ek_config.proxy | default({}) }}"
+  - name: Mounting local volumes
+    when: hostvars['localhost'].ek_config.volumes is defined
+    block:
     - name: Set devices to mount
+      when: item.name == inventory_hostname
       set_fact:
         ekara_devices: "{{item.devices}}"
-      loop: "{{ekara_configuration_params.volumes}}"
+      loop: "{{hostvars['localhost'].ek_config.volumes}}"
       loop_control:
         label: "{{item.name}}"
-      when:
-      - item.name == inventory_hostname
     - name: Mount FS for disks
+      when: ekara_devices is defined
       include_role:
         name: ekara.filesystem
       vars:
@@ -41,52 +47,41 @@
       loop_control:
         loop_var: device_to_mount
         label: "{{device_to_mount.volume}}"
-      when:
-      - ekara_devices is defined
-    when:
-    - ekara_configuration_params.volumes is defined
 
-- hosts: nodes
-  gather_facts: true
-  tasks:
-  - name: Get nodes IP
-    set_fact:
-      ekara_nodes_ips: "{{ groups['managers'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
-
-- hosts: nodes:&{{hostvars['localhost'].nodeset}}
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
   gather_facts: false
   tasks:
   - name: Install Docker
     include_role:
       name: ekara.docker
     vars:
-      ekara_docker_proxy: "{{hostvars['localhost'].ekara_proxy}}"
-      ekara_docker_params: "{{ekara_configuration_params.orchestrator.docker.params}}"
-      ekara_docker_ca_cn: "{{ekara_configuration_params.environment.name}}_{{ekara_configuration_params.environment.qualifier}}"
-      ekara_docker_provider: "{{ekara_provider_map}}"
-      ekara_docker_all: "{{ekara_configuration_params.orchestrator.docker}}"
+      ekara_docker_proxy: "{{hostvars['localhost'].ek_config.proxy | default({})}}"
+      ekara_docker_params: "{{hostvars['localhost'].ek_config.orchestrator.docker.params}}"
+      ekara_docker_ca_cn: "{{hostvars['localhost'].ek_config.environment.name}}_{{hostvars['localhost'].ek_config.environment.qualifier}}"
+      ekara_docker_all: "{{hostvars['localhost'].ek_config.orchestrator.docker}}"
       ekara_docker_nodes_ip: "{{ekara_nodes_ips}}"
-      ekara_labels: "{{ekara_configuration_params.labels|default({})}}"
+      ekara_labels: "{{hostvars['localhost'].ek_config.labels|default({})}}"
       ekara_docker_default_version: "{{ekara_docker_recommended_version}}"
 
-- hosts: nodes:!{{hostvars['localhost'].nodeset}}
+- hosts: "!ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}"
   gather_facts: false
   tasks:
-  - block:
-    - debug: var=ekara_nodes_ips
+  - name: Update Docker proxy configuration
+    when: hostvars['localhost'].ek_config.proxy | default({}).http_proxy is defined
+    block:
+    - debug:
+        var: ekara_nodes_ips
     - name: Update Docker Proxies
       include_role:
         name: ekara.docker
         tasks_from: proxies.yml
       vars:
-        ekara_docker_proxy: "{{hostvars['localhost'].ekara_proxy}}"
-        ekara_docker_nodes_ip: "{{ekara_nodes_ips}}"
+        ekara_docker_proxy: "{{ hostvars['localhost'].ek_config.proxy | default({}) }}"
+        ekara_docker_nodes_ip: "{{ ekara_nodes_ips }}"
     - name: Restart Docker
       include_role:
         name: ekara.docker
         tasks_from: start.yml
-    when:
-    - hostvars['localhost'].ekara_proxy.http_proxy is defined
 
-- name: Install Swarm
+- name: Configure Docker Swarm
   import_playbook: install_swarm.yml
