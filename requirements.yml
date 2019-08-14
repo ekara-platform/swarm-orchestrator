@@ -5,7 +5,7 @@
 
 - src: https://github.com/ekara-platform/ansible-role-install.git
   version: master
-  name: ekara.ansible_install
+  name: ekara.install
 
 - src: https://github.com/ekara-platform/ansible-role-docker.git
   version: master
