@@ -27,7 +27,7 @@
   - block:
     - name: Check if a Swarm cluster already exists
       become: true
-      docker_swarm_info:        
+      docker_swarm_info:
       register: ek_swarm_info
 
     - name: Extract tokens from existing Swarm cluster
