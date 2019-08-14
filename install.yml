@@ -1,87 +1,97 @@
 ---
 - hosts: localhost
   gather_facts: false
-  pre_tasks:
+  tasks:
   - name: Load configuration
     include_role:
       name: ekara.configuration
 
-- hosts: all
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
   gather_facts: true
   tasks:
-  - name: Get nodes IP
-    set_fact:
-      ekara_nodes_ips: "{{ groups['ek_role_manager'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
-
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
-  gather_facts: false
-  pre_tasks:
-  - name: Load configuration
+  - name: Ensure operating system is installed and configured
     include_role:
-      name: ekara.configuration
-  tasks:
-  - name: Install Ansible packages
-    include_role:
-      name: ekara.ansible_install
-    vars:
-      ekara_install_proxy: "{{ hostvars['localhost'].ek_config.proxy | default({}) }}"
-  - name: Mounting local volumes
-    when: hostvars['localhost'].ek_config.volumes is defined
-    block:
-    - name: Set devices to mount
-      when: item.name == inventory_hostname
-      set_fact:
-        ekara_devices: "{{item.devices}}"
-      loop: "{{hostvars['localhost'].ek_config.volumes}}"
-      loop_control:
-        label: "{{item.name}}"
-    - name: Mount FS for disks
-      when: ekara_devices is defined
-      include_role:
-        name: ekara.filesystem
-      vars:
-        ekara_fs_dev: "{{device_to_mount.device}}"
-        ekara_fs_mount: "{{device_to_mount.volume}}"
-        ekara_fs_volume: "{{device_to_mount.volume_id | default('')}}"
-      loop: "{{ekara_devices}}"
-      loop_control:
-        loop_var: device_to_mount
-        label: "{{device_to_mount.volume}}"
+      name: ekara.install
 
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
-  gather_facts: false
-  tasks:
-  - name: Install Docker
+  - name: Ensure Docker is installed and configured
     include_role:
       name: ekara.docker
     vars:
-      ekara_docker_proxy: "{{hostvars['localhost'].ek_config.proxy | default({})}}"
-      ekara_docker_params: "{{hostvars['localhost'].ek_config.orchestrator.docker.params}}"
-      ekara_docker_ca_cn: "{{hostvars['localhost'].ek_config.environment.name}}_{{hostvars['localhost'].ek_config.environment.qualifier}}"
-      ekara_docker_all: "{{hostvars['localhost'].ek_config.orchestrator.docker}}"
-      ekara_docker_nodes_ip: "{{ekara_nodes_ips}}"
-      ekara_labels: "{{hostvars['localhost'].ek_config.labels|default({})}}"
-      ekara_docker_default_version: "{{ekara_docker_recommended_version}}"
+      ek_docker_ca_cn: "{{ hostvars['localhost'].ek_config.environment.id }}"
+      ek_docker_proxy: "{{ hostvars['localhost'].ek_config.proxy }}"
+      ek_docker_params: "{{ hostvars['localhost'].ek_config.docker }}"
 
-- hosts: "!ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}"
+- hosts: ek_role_manager
+  gather_facts: true
+  tasks:
+  - block:
+    - name: Check if a Swarm cluster already exists
+      docker_swarm:
+        state: inspect
+      register: ek_tokens
+
+    - name: Extract tokens from existing Swarm cluster
+      when: ek_tokens.swarm_facts is defined
+      set_fact:
+        ek_swarm_info:
+          worker_token: "{ ek_tokens.swarm_facts.JoinTokens.Worker }}"
+          manager_token: "{{ ek_tokens.swarm_facts.JoinTokens.Manager }}"
+          manager_master: "{{ ansible_facts.default_ipv4.address }}"
+
+- hosts: localhost
   gather_facts: false
   tasks:
-  - name: Update Docker proxy configuration
-    when: hostvars['localhost'].ek_config.proxy | default({}).http_proxy is defined
-    block:
-    - debug:
-        var: ekara_nodes_ips
-    - name: Update Docker Proxies
-      include_role:
-        name: ekara.docker
-        tasks_from: proxies.yml
-      vars:
-        ekara_docker_proxy: "{{ hostvars['localhost'].ek_config.proxy | default({}) }}"
-        ekara_docker_nodes_ip: "{{ ekara_nodes_ips }}"
-    - name: Restart Docker
-      include_role:
-        name: ekara.docker
-        tasks_from: start.yml
+  - name: Store Swarm cluster info if any
+    loop: "{{ groups['ek_role_manager']) }}"
+    when: hostvars[item].ek_swarm_info is defined
+    set_fact:
+      ek_swarm_info: "{{ hostvars[item].ek_swarm_info }}"
 
-- name: Configure Docker Swarm
-  import_playbook: install_swarm.yml
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
+  gather_facts: true
+  run_once: true
+  tasks:
+  - name: Create a new Swarm cluster
+    when: hostvars['localhost'].ek_swarm_info is not defined
+    block:
+    - name: Ensure a Swarm Cluster is present
+      docker_swarm:
+        state: "present"
+        advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
+      register: ek_tokens
+
+    - name: Extract tokens from new Swarm cluster
+      set_fact:
+        ek_swarm_info:
+          worker_token: "{{ ek_tokens.swarm_facts.JoinTokens.Worker }}"
+          manager_token: "{{ ek_tokens.swarm_facts.JoinTokens.Manager }}"
+          manager_master: "{{ ansible_facts.default_ipv4.address }}"
+
+- hosts: localhost
+  gather_facts: false
+  tasks:
+  - name: Store Swarm cluster info if any
+    loop: "{{ groups['ek_role_manager']) }}"
+    when: hostvars[item].ek_swarm_info is defined
+    set_fact:
+      ek_swarm_info: "{{ hostvars[item].ek_swarm_info }}"
+
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
+  gather_facts: true
+  tasks:
+  - name: Ensure managers from the nodeset are joining the Swarm cluster
+    docker_swarm:
+      state: "join"
+      advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
+      join_token: "{{ hostvars['localhost'].ek_swarm_info.manager_token }}"
+      remote_addrs: [ "{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377" ]
+
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_worker
+  gather_facts: true
+  tasks:
+  - name: Ensure workers from the nodeset are joining the Swarm cluster
+    docker_swarm:
+      state: "join"
+      advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
+      join_token: "{{ hostvars['localhost'].ek_swarm_info.worker_token }}"
+      remote_addrs: [ "{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377" ]
