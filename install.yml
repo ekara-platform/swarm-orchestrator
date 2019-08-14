@@ -26,6 +26,7 @@
   tasks:
   - block:
     - name: Check if a Swarm cluster already exists
+      become: true
       docker_swarm:
         state: inspect
       register: ek_tokens
@@ -55,6 +56,7 @@
     when: hostvars['localhost'].ek_swarm_info is not defined
     block:
     - name: Ensure a Swarm Cluster is present
+      become: true
       docker_swarm:
         state: "present"
         advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
@@ -80,6 +82,7 @@
   gather_facts: true
   tasks:
   - name: Ensure managers from the nodeset are joining the Swarm cluster
+    become: true
     docker_swarm:
       state: "join"
       advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
@@ -90,6 +93,7 @@
   gather_facts: true
   tasks:
   - name: Ensure workers from the nodeset are joining the Swarm cluster
+    become: true
     docker_swarm:
       state: "join"
       advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
