@@ -27,56 +27,55 @@
   - block:
     - name: Check if a Swarm cluster already exists
       become: true
-      docker_swarm:
-        state: inspect
-      register: ek_tokens
+      docker_swarm_info:        
+      register: ek_swarm_info
 
     - name: Extract tokens from existing Swarm cluster
-      when: ek_tokens.swarm_facts is defined
+      when: ek_swarm_info.docker_swarm_manager
       set_fact:
-        ek_swarm_info:
-          worker_token: "{ ek_tokens.swarm_facts.JoinTokens.Worker }}"
-          manager_token: "{{ ek_tokens.swarm_facts.JoinTokens.Manager }}"
-          manager_master: "{{ ansible_facts.default_ipv4.address }}"
+        ek_swarm_details:
+          worker_token: "{ ek_swarm_info.swarm_facts.JoinTokens.Worker }}"
+          manager_token: "{{ ek_swarm_info.swarm_facts.JoinTokens.Manager }}"
+          manager_address: "{{ ansible_facts.default_ipv4.address }}"
 
 - hosts: localhost
   gather_facts: false
   tasks:
   - name: Store Swarm cluster info if any
     loop: "{{ groups['ek_role_manager'] }}"
-    when: hostvars[item].ek_swarm_info is defined
+    when: hostvars[item].ek_swarm_details is defined
     set_fact:
-      ek_swarm_info: "{{ hostvars[item].ek_swarm_info }}"
+      ek_swarm_details: "{{ hostvars[item].ek_swarm_details }}"
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
   gather_facts: true
   run_once: true
   tasks:
   - name: Create a new Swarm cluster
-    when: hostvars['localhost'].ek_swarm_info is not defined
+    when: hostvars['localhost'].ek_swarm_details is not defined
     block:
     - name: Ensure a Swarm Cluster is present
       become: true
       docker_swarm:
         state: "present"
         advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
-      register: ek_tokens
+      register: ek_swarm_info
 
     - name: Extract tokens from new Swarm cluster
       set_fact:
-        ek_swarm_info:
-          worker_token: "{{ ek_tokens.swarm_facts.JoinTokens.Worker }}"
-          manager_token: "{{ ek_tokens.swarm_facts.JoinTokens.Manager }}"
-          manager_master: "{{ ansible_facts.default_ipv4.address }}"
+        ek_swarm_details:
+          worker_token: "{{ ek_swarm_info.swarm_facts.JoinTokens.Worker }}"
+          manager_token: "{{ ek_swarm_info.swarm_facts.JoinTokens.Manager }}"
+          manager_address: "{{ ansible_facts.default_ipv4.address }}"
 
 - hosts: localhost
   gather_facts: false
   tasks:
   - name: Store Swarm cluster info if any
     loop: "{{ groups['ek_role_manager'] }}"
-    when: hostvars[item].ek_swarm_info is defined
+    when: hostvars[item].ek_swarm_details is defined
     set_fact:
-      ek_swarm_info: "{{ hostvars[item].ek_swarm_info }}"
+      ek_swarm_details: "{{ hostvars[item].ek_swarm_details }}"
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
   gather_facts: true
@@ -86,8 +85,8 @@
     docker_swarm:
       state: "join"
       advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
-      join_token: "{{ hostvars['localhost'].ek_swarm_info.manager_token }}"
-      remote_addrs: ["{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377"]
+      join_token: "{{ hostvars['localhost'].ek_swarm_details.manager_token }}"
+      remote_addrs: ["{{ hostvars['localhost'].ek_swarm_details.manager_address }}:2377"]
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_worker
   gather_facts: true
@@ -97,5 +96,5 @@
     docker_swarm:
       state: "join"
       advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
-      join_token: "{{ hostvars['localhost'].ek_swarm_info.worker_token }}"
-      remote_addrs: ["{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377"]
+      join_token: "{{ hostvars['localhost'].ek_swarm_details.worker_token }}"
+      remote_addrs: ["{{ hostvars['localhost'].ek_swarm_details.manager_address }}:2377"]
