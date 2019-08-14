@@ -84,7 +84,7 @@
       state: "join"
       advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
       join_token: "{{ hostvars['localhost'].ek_swarm_info.manager_token }}"
-      remote_addrs: [ "{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377" ]
+      remote_addrs: ["{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377"]
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_worker
   gather_facts: true
@@ -94,4 +94,4 @@
       state: "join"
       advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
       join_token: "{{ hostvars['localhost'].ek_swarm_info.worker_token }}"
-      remote_addrs: [ "{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377" ]
+      remote_addrs: ["{{ hostvars['localhost'].ek_swarm_info.manager_master }}:2377"]
