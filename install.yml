@@ -43,7 +43,7 @@
   gather_facts: false
   tasks:
   - name: Store Swarm cluster info if any
-    loop: "{{ groups['ek_role_manager']) }}"
+    loop: "{{ groups['ek_role_manager'] }}"
     when: hostvars[item].ek_swarm_info is defined
     set_fact:
       ek_swarm_info: "{{ hostvars[item].ek_swarm_info }}"
@@ -73,7 +73,7 @@
   gather_facts: false
   tasks:
   - name: Store Swarm cluster info if any
-    loop: "{{ groups['ek_role_manager']) }}"
+    loop: "{{ groups['ek_role_manager'] }}"
     when: hostvars[item].ek_swarm_info is defined
     set_fact:
       ek_swarm_info: "{{ hostvars[item].ek_swarm_info }}"
