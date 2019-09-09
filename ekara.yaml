@@ -1,5 +1,5 @@
 orchestrator:
-  docker:
+  params:
     remap: true    
     daemon:
       log-driver: json-file

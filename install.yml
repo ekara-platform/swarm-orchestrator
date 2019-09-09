@@ -19,7 +19,7 @@
     vars:
       ek_docker_ca_cn: "{{ hostvars['localhost'].ek_config.environment.id }}"
       ek_docker_proxy: "{{ hostvars['localhost'].ek_config.proxy }}"
-      ek_docker_params: "{{ hostvars['localhost'].ek_config.docker }}"
+      ek_docker_params: "{{ hostvars['localhost'].ek_config.params }}"
 
 - hosts: ek_role_manager
   gather_facts: true
