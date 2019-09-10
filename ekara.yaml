@@ -1,6 +1,6 @@
 orchestrator:
   params:
-    remap: true    
+    remap: false    
     daemon:
       log-driver: json-file
       log-opts:
