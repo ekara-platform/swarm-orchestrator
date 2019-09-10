@@ -47,10 +47,8 @@
     when: hostvars[item].ek_swarm_details is defined
     set_fact:
       ek_swarm_details: "{{ hostvars[item].ek_swarm_details }}"
-
-- debug:
-    var: ek_swarm_details
-  when: ek_swarm_details is defined
+  - debug:
+      var: ek_swarm_details
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
   gather_facts: true
@@ -81,10 +79,8 @@
     when: hostvars[item].ek_swarm_details is defined
     set_fact:
       ek_swarm_details: "{{ hostvars[item].ek_swarm_details }}"
-
-- debug:
-    var: ek_swarm_details
-  when: ek_swarm_details is defined
+  - debug:
+      var: ek_swarm_details
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
   gather_facts: true
