@@ -35,7 +35,7 @@
       when: ek_swarm_info.docker_swarm_manager
       set_fact:
         ek_swarm_details:
-          worker_token: "{ ek_swarm_info.swarm_facts.JoinTokens.Worker }}"
+          worker_token: "{{ ek_swarm_info.swarm_facts.JoinTokens.Worker }}"
           manager_token: "{{ ek_swarm_info.swarm_facts.JoinTokens.Manager }}"
           manager_address: "{{ ansible_facts.default_ipv4.address }}"
 
