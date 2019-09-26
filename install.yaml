@@ -29,7 +29,7 @@
       become: true
       docker_swarm_info:
       register: ek_swarm_info
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Extract tokens from existing Swarm cluster
       when: ek_swarm_info.docker_swarm_manager

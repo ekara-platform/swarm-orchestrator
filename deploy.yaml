@@ -5,9 +5,9 @@
   tasks:
   - name: 'Checking component_path and stack_name parameters'
     assert:
-      that: 
-        - component_path is defined
-        - stack_name is defined
+      that:
+      - component_path is defined
+      - stack_name is defined
 
   - set_fact:
       ek_stack_dir: "/tmp/ek-{{ stack_name }}-{{ lookup('pipe','date') | to_uuid }}"

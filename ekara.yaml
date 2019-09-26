@@ -1,6 +1,6 @@
 orchestrator:
   params:
-    remap: false    
+    remap: false
     daemon:
       log-driver: json-file
       log-opts:
@@ -9,8 +9,8 @@ orchestrator:
       userland-proxy: true
       live-restore: false
       hosts:
-        - "unix:///var/run/docker.sock"
-        - "tcp://0.0.0.0:2376"    
+      - "unix:///var/run/docker.sock"
+      - "tcp://0.0.0.0:2376"
     tls:
       enabled: true
       cacert: "/etc/docker/certs/ca.pem"
