@@ -4,4 +4,4 @@
 
   pre_tasks:
   - name: Checkout roles
-    command: ansible-galaxy install -r requirements.yml
+    command: ansible-galaxy install -r requirements.yaml
