@@ -30,6 +30,9 @@
         path: "{{ ek_stack_dir }}/docker-compose.yml"
       register: compose_yml
 
+    - debug:
+      var: compose_yml
+
     - name: "Executing stack deploy using docker-compose.yml"
       when: compose_yml.stat.exists == true
       become: true
@@ -43,6 +46,9 @@
       stat:
         path: "{{ ek_stack_dir }}/docker-compose.yaml"
       register: compose_yaml
+
+    - debug:
+      var: compose_yaml
 
     - name: "Executing stack deploy using docker-compose.yaml"
       when: compose_yml.stat.exists == false and compose_yaml.stat.exists == true
