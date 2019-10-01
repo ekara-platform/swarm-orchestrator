@@ -25,15 +25,39 @@
         src: "{{ component_path }}/"
         dest: "{{ ek_stack_dir }}/"
 
+    - name: "Checking if docker_compose.yaml file exists"
+      stat: 
+        path: "{{ ek_stack_dir }}/docker_compose.yaml"
+      register: compose_yaml
+
+    - name: "Checking if docker_compose.yml file exists"
+      stat: 
+        path: "{{ ek_stack_dir }}/docker_compose.yml"
+      register: compose_yml
+
     - name: "Executing stack deploy using docker_compose.yaml"
       become: true
+      when: compose_yaml.stat.exists == true
       docker_stack:
         state: present
         name: "{{ stack_name }}"
         compose: "{{ ek_stack_dir }}/docker_compose.yaml"
+
+    - name: "Executing stack deploy using docker_compose.yml"
+      become: true
+      when: compose_yml.stat.exists == true
+      docker_stack:
+        state: present
+        name: "{{ stack_name }}"
+        compose: "{{ ek_stack_dir }}/docker_compose.yml"
 
     always:
     - name: "Purge temporary directory"
       file:
         path: "{{ ek_stack_dir }}"
         state: absent
+
+    - name: check if rules file exists
+      stat: 
+        path: /etc/shorewall/rules
+      register: shorewall_rules
