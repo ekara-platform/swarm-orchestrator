@@ -45,7 +45,7 @@
 
     - name: "Executing stack deploy using docker_compose.yml"
       become: true
-      when: compose_yml.stat.exists == true
+      when: compose_yaml.stat.exists == false and compose_yml.stat.exists == true
       docker_stack:
         state: present
         name: "{{ stack_name }}"
