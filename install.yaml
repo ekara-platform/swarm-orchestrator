@@ -103,3 +103,12 @@
       advertise_addr: "{{ ansible_facts.default_ipv4.address }}"
       join_token: "{{ hostvars['localhost'].ek_swarm_details.worker_token }}"
       remote_addrs: ["{{ hostvars['localhost'].ek_swarm_details.manager_address }}:2377"]
+
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
+  gather_facts: true
+  tasks:
+  - name: Ensure label(s) are applied on node(s)
+    become: true
+    docker_node:
+      hostname: "{{ ansible_facts['nodename'] }}"
+      labels: "{{ ekara.labels }}"
