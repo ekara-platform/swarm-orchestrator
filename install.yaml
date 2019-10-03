@@ -112,3 +112,4 @@
     docker_node:
       hostname: "{{ ansible_facts['nodename'] }}"
       labels: "{{ ekara.labels }}"
+      labels_state: replace
