@@ -104,12 +104,14 @@
       join_token: "{{ hostvars['localhost'].ek_swarm_details.worker_token }}"
       remote_addrs: ["{{ hostvars['localhost'].ek_swarm_details.manager_address }}:2377"]
 
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
+- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
+  run_once: true
   gather_facts: true
   tasks:
   - name: Ensure label(s) are applied on node(s)
     become: true
+    loop: "{{ groups['ek_nodeset_' ~ hostvars['localhost'].ek_config.environment.nodeset] }}"
     docker_node:
-      hostname: "{{ ansible_facts['nodename'] }}"
-      labels: "{{ ekara.labels }}"
+      hostname: "{{ hostvars[item]['ansible_nodename'] }}"
+      labels: "{{ hostvars[item]['ekara']['labels'] }}"
       labels_state: replace
