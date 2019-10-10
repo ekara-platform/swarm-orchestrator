@@ -48,6 +48,7 @@
     set_fact:
       ek_swarm_details: "{{ hostvars[item].ek_swarm_details }}"
   - debug:
+      verbosity: 1
       var: ek_swarm_details
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
@@ -80,6 +81,7 @@
     set_fact:
       ek_swarm_details: "{{ hostvars[item].ek_swarm_details }}"
   - debug:
+      verbosity: 1
       var: ek_swarm_details
 
 - hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
