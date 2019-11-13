@@ -6,7 +6,7 @@
     include_role:
       name: ekara.configuration
 
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}
+- hosts: all
   gather_facts: true
   tasks:
   - name: Ensure operating system is installed and configured
@@ -18,8 +18,8 @@
       name: ekara.docker
     vars:
       ek_docker_ca_cn: "{{ hostvars['localhost'].ek_config.environment.id }}"
-      ek_docker_proxy: "{{ hostvars['localhost'].ek_config.proxy }}"
       ek_docker_params: "{{ hostvars['localhost'].ek_config.params }}"
+      ek_docker_proxy: "{{ ekara.proxy }}"
 
 - hosts: ek_role_manager
   gather_facts: true
@@ -51,7 +51,7 @@
       verbosity: 1
       var: ek_swarm_details
 
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
+- hosts: ek_role_manager
   gather_facts: true
   run_once: true
   tasks:
@@ -84,10 +84,10 @@
       verbosity: 1
       var: ek_swarm_details
 
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
+- hosts: ek_role_manager
   gather_facts: true
   tasks:
-  - name: Ensure managers from the nodeset are joining the Swarm cluster
+  - name: Ensure managers are joining the Swarm cluster
     become: true
     docker_swarm:
       state: "join"
@@ -95,10 +95,10 @@
       join_token: "{{ hostvars['localhost'].ek_swarm_details.manager_token }}"
       remote_addrs: ["{{ hostvars['localhost'].ek_swarm_details.manager_address }}:2377"]
 
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_worker
+- hosts: ek_role_worker
   gather_facts: true
   tasks:
-  - name: Ensure workers from the nodeset are joining the Swarm cluster
+  - name: Ensure workers are joining the Swarm cluster
     become: true
     docker_swarm:
       state: "join"
@@ -106,13 +106,13 @@
       join_token: "{{ hostvars['localhost'].ek_swarm_details.worker_token }}"
       remote_addrs: ["{{ hostvars['localhost'].ek_swarm_details.manager_address }}:2377"]
 
-- hosts: ek_nodeset_{{ hostvars['localhost'].ek_config.environment.nodeset }}:&ek_role_manager
+- hosts: ek_role_manager
   run_once: true
   gather_facts: true
   tasks:
   - name: Ensure label(s) are applied on node(s)
     become: true
-    loop: "{{ groups['ek_nodeset_' ~ hostvars['localhost'].ek_config.environment.nodeset] }}"
+    loop: "{{ groups['all'] }}"
     docker_node:
       hostname: "{{ hostvars[item]['ansible_nodename'] }}"
       labels: "{{ hostvars[item]['ekara']['labels'] }}"
