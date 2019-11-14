@@ -22,7 +22,8 @@
         mode: 0777
 
     - name: "Sending stack files on a Docker Swarm manager"
-      copy:
+      synchronize:
+        checksum: true
         src: "{{ stack_path }}/"
         dest: "{{ ek_stack_dir }}/"
 
