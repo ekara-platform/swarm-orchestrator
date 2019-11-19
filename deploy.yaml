@@ -23,6 +23,7 @@
 
     - name: "Sending stack files on a Docker Swarm manager"
       synchronize:
+        use_ssh_args: true
         checksum: true
         src: "{{ stack_path }}/"
         dest: "{{ ek_stack_dir }}/"
