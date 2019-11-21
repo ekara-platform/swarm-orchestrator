@@ -9,10 +9,6 @@
 - hosts: all
   gather_facts: true
   tasks:
-  - name: Ensure operating system is installed and configured
-    include_role:
-      name: ekara.install
-
   - name: Ensure Docker is installed and configured
     include_role:
       name: ekara.docker
