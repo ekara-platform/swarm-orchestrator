@@ -113,9 +113,9 @@
       hostname: "{{ hostvars[item]['ansible_nodename'] }}"
       labels: "{{ hostvars[item]['ekara']['labels'] }}"
       labels_state: replace
-  - name: Ensure environment public key is stored as a Docker secret
+  - name: Ensure environment private key is stored as a Docker secret
     become: true
     docker_secret:
-      name: ek_public_key
-      data: "{{ lookup('file', ek_config.ssh.public_key) }}"
+      name: ek_private_key
+      data: "{{ lookup('file', ek_config.ssh.private_key) }}"
       state: present
