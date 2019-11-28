@@ -117,5 +117,5 @@
     become: true
     docker_secret:
       name: ek_private_key
-      data: "{{ lookup('file', ek_config.ssh.private_key) }}"
+      data: "{{ lookup('file', hostvars['localhost'].ek_config.ssh.private_key) }}"
       state: present
