@@ -16,13 +16,10 @@
   - name: "Copying {{ item }} to {{ copy_path }}"
     loop: "{{ copy_sources }}"
     synchronize:
-      archive: true
+      archive: false
       use_ssh_args: true
-      checksum: true
       src: "{{ stack_path }}/"
       dest: "{{ copy_path }}/"
       rsync_opts:
-      - "--no-perms"
-      - "--omit-dir-times"
       - "--include={{ item }}"
       - "--exclude=*"
