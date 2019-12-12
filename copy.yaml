@@ -13,7 +13,12 @@
 - hosts: "{% if copy_labels is defined %}{{ copy_labels | dict2items | json_query('[].[key, value]') | map('join', '_') | list | join(':&') }}{% else %}all{% endif %}"
   run_once: "{{ copy_once | default(False) }}"
   tasks:
-  - name: "Copying {{ item }} to {{ copy_path }}"
+  - name: "Ensure target path {{ copy_path }} exists"
+    file:
+      path: "{{ copy_path }}"
+      state: directory
+
+  - name: "Synchronize files matching {{ item }} to {{ copy_path }}"
     loop: "{{ copy_sources }}"
     synchronize:
       archive: false
