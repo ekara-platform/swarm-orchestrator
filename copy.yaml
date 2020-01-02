@@ -17,8 +17,7 @@
       state: directory
 
   - name: "Synchronize files matching {{ item }} to {{ copy_path }}"
-    when: copy_source | length > 0
-    loop: "{{ copy_sources }}"
+    loop: "{{ copy_sources | default([]) }}"
     synchronize:
       archive: false
       use_ssh_args: true
