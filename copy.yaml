@@ -10,7 +10,7 @@
       - copy_sources is defined
       - copy_labels is defined
 
-- hosts: "{% if copy_labels is defined %}{{ copy_labels | dict2items | json_query('[].[key, value]') | map('join', '_') | list | join(':&') }}{% else %}all{% endif %}"
+- hosts: "{% if copy_labels | length > 0 %}{{ copy_labels | dict2items | json_query('[].[key, value]') | map('join', '_') | list | join(':&') }}{% else %}all{% endif %}"
   run_once: "{{ copy_once | default(False) }}"
   tasks:
   - name: "Ensure target path {{ copy_path }} exists"
