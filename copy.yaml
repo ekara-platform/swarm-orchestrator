@@ -4,14 +4,12 @@
   - name: 'Checking required parameters'
     assert:
       that:
-      - copy_once is defined
-      - copy_path is defined
       - stack_path is defined
-      - copy_sources is defined
-      - copy_labels is defined
+      - copy_path is defined
+      - copy_once is defined
 
-- hosts: "{% if copy_labels | length > 0 %}{{ copy_labels | dict2items | json_query('[].[key, value]') | map('join', '_') | list | join(':&') }}{% else %}all{% endif %}"
-  run_once: "{{ copy_once | default(False) }}"
+- hosts: "{% if copy_labels is defined %}{{ copy_labels | dict2items | json_query('[].[key, value]') | map('join', '_') | list | join(':&') }}{% else %}all{% endif %}"
+  run_once: "{{ copy_once }}"
   tasks:
   - name: "Ensure target path {{ copy_path }} exists"
     file:
@@ -19,6 +17,7 @@
       state: directory
 
   - name: "Synchronize files matching {{ item }} to {{ copy_path }}"
+    when: copy_source | length > 0
     loop: "{{ copy_sources }}"
     synchronize:
       archive: false
