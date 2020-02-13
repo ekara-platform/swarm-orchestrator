@@ -2,7 +2,7 @@
 
 vars:
   runtime:
-    test: {{ .Runtime.hook2Prefix }}
+    test: {{ .Runtime }}
     
 orchestrator:
   params:
