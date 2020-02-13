@@ -1,11 +1,7 @@
 ---
-
-vars:
-  runtime:
-    test: {{ .Runtime }}
-    
 orchestrator:
   params:
+    test-hook2Prefix: {{ .Runtime.hook2Prefix }}
     remap: false
     daemon:
       log-driver: json-file
