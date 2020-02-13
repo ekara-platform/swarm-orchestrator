@@ -1,4 +1,9 @@
 ---
+
+vars:
+  runtime:
+    test: {{ .Runtime.hook2Prefix }}
+    
 orchestrator:
   params:
     remap: false
